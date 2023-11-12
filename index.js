@@ -42,14 +42,34 @@ function mainMenu() {
 }
 
 function viewDepartments() {
-    console.log("Viewing departments. Not implemented yet.");
-    mainMenu();
+    const query = "SELECT id, name as department FROM department;";
+
+    db.query(query, (err, data) => {
+        if (err) {
+            console.error("Error fetching departments:", err);
+        } else {
+            printTable(data);
+        }
+        mainMenu();
+    });
 }
 
 function viewRoles() {
-    console.log("Viewing roles. Not implemented yet.");
-    mainMenu();
+    const query = `
+        SELECT role.id, title, salary, name as department
+        FROM role
+        LEFT JOIN department ON department.id = role.department_id;`;
+
+    db.query(query, (err, data) => {
+        if (err) {
+            console.error("Error fetching roles:", err);
+        } else {
+            printTable(data);
+        }
+        mainMenu();
+    });
 }
+
 
 function viewEmployees() {
     const query = `
@@ -72,14 +92,63 @@ function viewEmployees() {
 
 
 function addDepartment() {
-    console.log("Adding a department. Not implemented yet.");
-    mainMenu();
+    inquirer.prompt([
+        {
+            type: "input",
+            message: "Enter the name of the new department:",
+            name: "department_name",
+        },
+    ]).then(answer => {
+        db.query("INSERT INTO department (name) VALUES (?)", [answer.department_name], err => {
+            if (err) {
+                console.error("Error adding department:", err);
+            } else {
+                console.log("Department added successfully.");
+            }
+            mainMenu();
+        });
+    });
 }
 
 function addRole() {
-    console.log("Adding a role. Not implemented yet.");
-    mainMenu();
+    db.query("SELECT id as value, name as name FROM department", (err, departmentData) => {
+        if (err) {
+            console.error("Error fetching department data:", err);
+            mainMenu();
+            return;
+        }
+
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "Enter the title of the new role:",
+                name: "title",
+            },
+            {
+                type: "input",
+                message: "Enter the salary for the new role:",
+                name: "salary",
+            },
+            {
+                type: "list",
+                message: "Choose the department for the new role:",
+                name: "department_id",
+                choices: departmentData,
+            },
+        ]).then(answer => {
+            db.query("INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
+                [answer.title, answer.salary, answer.department_id], err => {
+                    if (err) {
+                        console.error("Error adding role:", err);
+                    } else {
+                        console.log("Role added successfully.");
+                    }
+                    mainMenu();
+                });
+        });
+    });
 }
+
 
 function addEmployee() {
     db.query("SELECT id as value, title as name from role ", (err, roleData) => {
@@ -123,6 +192,32 @@ function addEmployee() {
 }
 
 function updateEmployeeRole() {
-    console.log("Updating employee role. Not implemented yet.");
-    mainMenu();
+    db.query("SELECT id as value, title as name from role ", (err, roleData) => {
+        db.query("SELECT id as value, CONCAT(first_name, ' ', last_name) as name FROM employee WHERE manager_id is null", (err, employeeData) => {
+            inquirer.prompt([
+                {
+                    type: "list",
+                    message: "Choose the following title:",
+                    name: "role_id",
+                    choices: roleData
+                },
+                {
+                    type: "list",
+                    message: "Choose the following employee:",
+                    name: "employee_id",
+                    choices: employeeData
+                },
+            ]).then(answer => {
+                db.query("UPDATE employee SET role_id = ? WHERE id = ?", [answer.role_id, answer.employee_id], err => {
+                    if (err) {
+                        console.error("Error adding employee:", err);
+                    } else {
+                        console.log("Employee added successfully.");
+                        viewEmployees();  // Call viewEmployees after adding an employee
+                    }
+                    mainMenu();
+                });
+            });
+        });
+    });
 }
