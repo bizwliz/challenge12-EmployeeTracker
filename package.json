@@ -20,6 +20,7 @@
     "color-name": "^1.1.4",
     "console-table-printer": "^2.11.2",
     "defaults": "^1.0.4",
+    "dotenv": "^16.3.1",
     "emoji-regex": "^8.0.0",
     "escape-string-regexp": "^1.0.5",
     "external-editor": "^3.1.0",
